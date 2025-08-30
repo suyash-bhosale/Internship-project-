@@ -1,0 +1,1382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🛰️ AgriSat Monitor - Smart Precision Farming</title>
+
+<!-- External Dependencies -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* Modern CSS Variables and Theme */
+:root {
+    /* Satellite Theme Colors */
+    --space-dark: #0a0e1a;
+    --space-navy: #1a1f35;
+    --satellite-blue: #00b4d8;
+    --orbital-cyan: #0077b6;
+    --tech-green: #00f5ff;
+    --earth-green: #2d5016;
+    --solar-gold: #ffb700;
+    --signal-orange: #ff6b35;
+    --pure-white: #ffffff;
+    --glass-white: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.2);
+    
+    /* Gradients */
+    --space-gradient: linear-gradient(135deg, #0a0e1a 0%, #1a1f35 50%, #2a3454 100%);
+    --satellite-gradient: linear-gradient(45deg, #00b4d8 0%, #0077b6 50%, #023e8a 100%);
+    --tech-gradient: linear-gradient(90deg, #00f5ff 0%, #00b4d8 100%);
+    --aurora-gradient: linear-gradient(45deg, #00f5ff 0%, #00b4d8 30%, #0077b6 60%, #023e8a 100%);
+    
+    /* Shadows and Effects */
+    --glow-cyan: 0 0 20px rgba(0, 245, 255, 0.3);
+    --glow-blue: 0 0 30px rgba(0, 180, 216, 0.4);
+    --card-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+/* Global Styles */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--space-gradient);
+    font-family: 'Inter', sans-serif;
+    color: var(--pure-white);
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
+}
+
+/* Animated Background Elements */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: 
+        radial-gradient(circle at 20% 80%, rgba(0, 245, 255, 0.05) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(0, 180, 216, 0.08) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(255, 183, 0, 0.03) 0%, transparent 50%);
+    z-index: -2;
+    animation: backgroundPulse 8s ease-in-out infinite;
+}
+
+@keyframes backgroundPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Floating Particles Animation */
+.particle {
+    position: fixed;
+    width: 2px;
+    height: 2px;
+    background: var(--tech-green);
+    border-radius: 50%;
+    z-index: -1;
+    animation: float-particles 10s linear infinite;
+    box-shadow: var(--glow-cyan);
+}
+
+@keyframes float-particles {
+    0% {
+        transform: translateY(100vh) translateX(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 1;
+    }
+    90% {
+        opacity: 1;
+    }
+    100% {
+        transform: translateY(-10vh) translateX(50px);
+        opacity: 0;
+    }
+}
+
+/* Container */
+.container {
+    max-width: 1400px;
+    margin: auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+}
+
+/* Modern Header with Satellite Theme */
+header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 3rem 2rem;
+    background: rgba(26, 31, 53, 0.8);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    position: relative;
+    overflow: hidden;
+}
+
+header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--tech-gradient);
+    animation: scanLine 3s linear infinite;
+}
+
+@keyframes scanLine {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(200%); }
+}
+
+.title-container {
+    position: relative;
+    display: inline-block;
+}
+
+.title-icon {
+    font-size: 4rem;
+    background: var(--aurora-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: satelliteOrbit 4s ease-in-out infinite;
+    display: inline-block;
+    margin-right: 1rem;
+    filter: drop-shadow(var(--glow-cyan));
+}
+
+@keyframes satelliteOrbit {
+    0%, 100% { 
+        transform: translateY(0) rotate(0deg);
+        filter: drop-shadow(0 0 20px rgba(0, 245, 255, 0.5));
+    }
+    25% { 
+        transform: translateY(-10px) rotate(5deg);
+        filter: drop-shadow(0 0 30px rgba(0, 180, 216, 0.7));
+    }
+    50% { 
+        transform: translateY(0) rotate(0deg);
+        filter: drop-shadow(0 0 20px rgba(0, 245, 255, 0.5));
+    }
+    75% { 
+        transform: translateY(-10px) rotate(-5deg);
+        filter: drop-shadow(0 0 30px rgba(0, 180, 216, 0.7));
+    }
+}
+
+header h1 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 3.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    background: var(--aurora-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 0 30px rgba(0, 245, 255, 0.3);
+    animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+    from { 
+        filter: drop-shadow(0 0 10px rgba(0, 245, 255, 0.5));
+    }
+    to { 
+        filter: drop-shadow(0 0 20px rgba(0, 180, 216, 0.8));
+    }
+}
+
+header p {
+    font-size: 1.4rem;
+    font-weight: 300;
+    opacity: 0.9;
+    margin-bottom: 2rem;
+    animation: fadeInUp 1s ease-out 0.5s both;
+}
+
+/* Status Indicators with Modern Design */
+.status-indicators {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 2rem;
+    flex-wrap: wrap;
+    animation: fadeInUp 1s ease-out 0.8s both;
+}
+
+.status-item {
+    background: rgba(0, 245, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 0.8rem 1.5rem;
+    border-radius: 50px;
+    border: 1px solid rgba(0, 245, 255, 0.3);
+    font-size: 0.9rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+}
+
+.status-item:hover::before {
+    left: 100%;
+}
+
+.status-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--glow-cyan);
+    border-color: var(--tech-green);
+}
+
+.status-item i {
+    color: var(--tech-green);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+/* Main Content Grid */
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    margin-bottom: 3rem;
+    animation: fadeInUp 1s ease-out 1s both;
+}
+
+/* Registration Card with Glassmorphism */
+.registration-card {
+    background: rgba(26, 31, 53, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 2.5rem;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s ease;
+}
+
+.registration-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--satellite-gradient);
+}
+
+.registration-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.5);
+}
+
+.registration-card h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    color: var(--pure-white);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.registration-card h4 i {
+    background: var(--satellite-gradient);
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: var(--glow-blue);
+    animation: iconFloat 3s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+
+/* Modern Form Inputs */
+.form-control {
+    background: rgba(0, 180, 216, 0.1);
+    border: 2px solid rgba(0, 245, 255, 0.2);
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    color: var(--pure-white);
+    margin-bottom: 1.5rem;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    position: relative;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: 400;
+}
+
+.form-control:focus {
+    outline: none;
+    border-color: var(--tech-green);
+    box-shadow: 0 0 20px rgba(0, 245, 255, 0.3);
+    background: rgba(0, 245, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.form-control:focus::placeholder {
+    color: rgba(255, 255, 255, 0.8);
+    transform: translateY(-20px);
+    font-size: 0.8rem;
+}
+
+/* Map Container with High-Tech Design */
+.map-container {
+    position: relative;
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: var(--card-shadow);
+    border: 2px solid var(--glass-border);
+    background: var(--space-navy);
+    transition: transform 0.3s ease;
+}
+
+.map-container:hover {
+    transform: scale(1.02);
+}
+
+#mapDiv {
+    height: 500px;
+    width: 100%;
+    position: relative;
+    border-radius: 22px;
+}
+
+.map-overlay {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: rgba(26, 31, 53, 0.9);
+    backdrop-filter: blur(15px);
+    color: var(--pure-white);
+    padding: 1rem 1.5rem;
+    border-radius: 16px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    z-index: 1000;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    transition: all 0.3s ease;
+}
+
+.map-overlay i {
+    color: var(--tech-green);
+    margin-right: 0.5rem;
+    animation: pulse 2s infinite;
+}
+
+/* Coordinates Section */
+.coordinates-section {
+    background: rgba(26, 31, 53, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    padding: 2.5rem;
+    margin-bottom: 3rem;
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 1s ease-out 1.2s both;
+}
+
+.coordinates-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: var(--satellite-gradient);
+}
+
+.coordinates-section h4 {
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--pure-white);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.coordinates-section h4 i {
+    background: var(--satellite-gradient);
+    width: 50px;
+    height: 50px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    box-shadow: var(--glow-blue);
+    animation: iconFloat 3s ease-in-out infinite;
+}
+
+.coordinates-display {
+    background: rgba(0, 245, 255, 0.05);
+    border: 2px solid rgba(0, 245, 255, 0.2);
+    padding: 1.5rem;
+    border-radius: 16px;
+    font-family: 'Space Grotesk', monospace;
+    min-height: 100px;
+    max-height: 180px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: var(--tech-green);
+    backdrop-filter: blur(5px);
+    scrollbar-width: thin;
+    scrollbar-color: var(--tech-green) rgba(0, 245, 255, 0.1);
+}
+
+/* Custom Scrollbar */
+.coordinates-display::-webkit-scrollbar {
+    width: 6px;
+}
+
+.coordinates-display::-webkit-scrollbar-track {
+    background: rgba(0, 245, 255, 0.1);
+    border-radius: 3px;
+}
+
+.coordinates-display::-webkit-scrollbar-thumb {
+    background: var(--tech-green);
+    border-radius: 3px;
+}
+
+/* Modern Buttons */
+.btn {
+    border-radius: 16px;
+    font-weight: 600;
+    padding: 1rem 2rem;
+    border: none;
+    font-family: 'Space Grotesk', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s ease;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+}
+
+.btn:active {
+    transform: translateY(-1px) scale(1.02);
+}
+
+.btn-success {
+    background: var(--satellite-gradient);
+    color: var(--pure-white);
+    font-size: 1rem;
+    box-shadow: var(--glow-blue);
+}
+
+.btn-success:hover {
+    box-shadow: 0 15px 40px rgba(0, 180, 216, 0.4);
+}
+
+.btn-primary {
+    background: var(--aurora-gradient);
+    color: var(--pure-white);
+    font-size: 1.4rem;
+    padding: 1.5rem 3rem;
+    box-shadow: var(--glow-cyan);
+}
+
+.btn-primary:hover {
+    box-shadow: 0 20px 50px rgba(0, 245, 255, 0.4);
+}
+
+.btn i {
+    margin-right: 0.8rem;
+    font-size: 1.1em;
+}
+
+/* Dashboard Container */
+.dashboard-container {
+    text-align: center;
+    padding: 3rem 2rem;
+    background: rgba(26, 31, 53, 0.6);
+    backdrop-filter: blur(20px);
+    border-radius: 24px;
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--card-shadow);
+    position: relative;
+    overflow: hidden;
+    animation: fadeInUp 1s ease-out 1.5s both;
+}
+
+.dashboard-container::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: 
+        radial-gradient(circle, rgba(0, 245, 255, 0.1) 0%, transparent 70%);
+    animation: rotate 20s linear infinite;
+    z-index: -1;
+}
+
+@keyframes rotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+.dashboard-container h3 {
+    margin-bottom: 2rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 2rem;
+    font-weight: 600;
+    background: var(--aurora-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* Animations */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Loading Animation */
+.loading-spinner {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: var(--tech-green);
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Responsive Design */
+@media (max-width: 992px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    header h1 {
+        font-size: 2.8rem;
+    }
+    
+    .title-icon {
+        font-size: 3rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 15px;
+    }
+    
+    header {
+        padding: 2rem 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    header h1 {
+        font-size: 2.2rem;
+    }
+    
+    .title-icon {
+        font-size: 2.5rem;
+        margin-right: 0.5rem;
+    }
+    
+    .registration-card,
+    .coordinates-section {
+        padding: 2rem;
+    }
+    
+    #mapDiv {
+        height: 400px;
+    }
+    
+    .btn-primary {
+        font-size: 1.2rem;
+        padding: 1.2rem 2.5rem;
+    }
+    
+    .status-indicators {
+        gap: 1rem;
+    }
+    
+    .dashboard-container h3 {
+        font-size: 1.6rem;
+    }
+}
+
+@media (max-width: 480px) {
+    header h1 {
+        font-size: 1.8rem;
+    }
+    
+    header p {
+        font-size: 1.1rem;
+    }
+    
+    .title-icon {
+        font-size: 2rem;
+    }
+    
+    .registration-card,
+    .coordinates-section,
+    .dashboard-container {
+        padding: 1.5rem;
+    }
+    
+    .status-item {
+        padding: 0.6rem 1rem;
+        font-size: 0.8rem;
+    }
+    
+    .btn-primary {
+        font-size: 1rem;
+        padding: 1rem 2rem;
+    }
+}
+
+/* Performance Optimizations */
+.gpu-accelerated {
+    transform: translateZ(0);
+    will-change: transform;
+}
+
+/* Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+</style>
+</head>
+<body>
+    <!-- Floating Particles Background -->
+    <div class="particles-container"></div>
+
+    <div class="container">
+        <header class="gpu-accelerated">
+            <div class="title-container">
+                <span class="title-icon">🛰️</span>
+                <h1>AgriSat Monitor</h1>
+            </div>
+            <p>Next-Generation Satellite Intelligence for Precision Agriculture</p>
+            <div class="status-indicators">
+                <div class="status-item">
+                    <i class="fas fa-satellite-dish"></i>
+                    <span>Orbital Link Active</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-wifi"></i>
+                    <span>Real-Time Sync</span>
+                </div>
+                <div class="status-item">
+                    <i class="fas fa-chart-line"></i>
+                    <span>AI Analytics Ready</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="main-content">
+            <div class="registration-card gpu-accelerated">
+                <h4><i class="fas fa-user-astronaut"></i>Farmer Profile Setup</h4>
+                <form>
+                    <input class="form-control" id="farmerName" placeholder="👨‍🌾 Enter Your Full Name">
+                    <input class="form-control" id="mobile" placeholder="📱 Contact Number">
+                    <input class="form-control" id="district" placeholder="🏘️ District / Region">
+                    <input class="form-control" id="cropName" placeholder="🌱 Primary Crop Type">
+                </form>
+            </div>
+            
+            <div class="map-container gpu-accelerated">
+                <div class="map-overlay">
+                    <i class="fas fa-draw-polygon"></i>
+                    <span>Define Farm Boundary</span>
+                </div>
+                <div id="mapDiv"></div>
+            </div>
+        </div>
+
+        <div class="coordinates-section gpu-accelerated">
+            <h4><i class="fas fa-map-marked-alt"></i>Geospatial Coordinates</h4>
+            <button class="btn btn-success mb-3" id="copyBtn">
+                <i class="fas fa-copy"></i> Export Coordinates
+            </button>
+            <div class="coordinates-display" id="coordinatesDisplay">
+                Awaiting farm boundary definition... Use the polygon tool above to trace your agricultural area.
+            </div>
+        </div>
+
+        <div class="dashboard-container gpu-accelerated">
+            <h3><i class="fas fa-rocket"></i> Initialize Crop Monitoring System</h3>
+            <p style="margin-bottom: 2rem; opacity: 0.8; font-size: 1.1rem;">
+                Launch your personalized satellite monitoring dashboard with advanced analytics
+            </p>
+            <button class="btn btn-primary" id="goToMonitoringBtn">
+                <i class="fas fa-satellite"></i> Activate Monitoring
+            </button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.draw/1.0.4/leaflet.draw.js"></script>
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+
+    <script>
+        // Create floating particles effect
+        function createParticles() {
+            const particleCount = window.innerWidth > 768 ? 15 : 8;
+            const container = document.body;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 10 + 's';
+                particle.style.animationDuration = (Math.random() * 5 + 8) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Initialize particles on load
+        document.addEventListener('DOMContentLoaded', function() {
+            createParticles();
+        });
+
+        // Initialize map with enhanced satellite imagery
+        const map = L.map('mapDiv', {
+            zoomControl: true,
+            preferCanvas: true
+        }).setView([16.7050, 74.2433], 12);
+
+        // High-resolution satellite layer
+        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri Satellite Imagery',
+            maxZoom: 20,
+            tileSize: 256
+        }).addTo(map);
+
+        // Enhanced labels overlay
+        L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+            attribution: '© Esri Labels',
+            opacity: 0.8
+        }).addTo(map);
+
+        // Advanced search with custom styling
+        const geocoder = L.Control.geocoder({ 
+            placeholder: "🔍 Search location or coordinates",
+            defaultMarkGeocode: false,
+            collapsed: false
+        }).on('markgeocode', function(e) {
+            const bbox = e.geocode.bbox;
+            const poly = L.polygon([
+                bbox.getSouthEast(),
+                bbox.getNorthEast(),
+                bbox.getNorthWest(),
+                bbox.getSouthWest()
+            ]);
+            map.fitBounds(poly.getBounds());
+            
+            // Add location found animation
+            const mapOverlay = document.querySelector('.map-overlay');
+            mapOverlay.innerHTML = '<i class="fas fa-check-circle"></i> Location Found';
+            mapOverlay.style.background = 'rgba(0, 245, 255, 0.9)';
+            
+            setTimeout(() => {
+                mapOverlay.innerHTML = '<i class="fas fa-draw-polygon"></i> Define Farm Boundary';
+                mapOverlay.style.background = 'rgba(26, 31, 53, 0.9)';
+            }, 3000);
+        }).addTo(map);
+
+        // Enhanced drawing controls with satellite theme
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        const drawControl = new L.Control.Draw({
+            draw: { 
+                polygon: {
+                    shapeOptions: {
+                        color: '#00f5ff',
+                        fillColor: '#00b4d8',
+                        fillOpacity: 0.3,
+                        weight: 3
+                    },
+                    allowIntersection: false,
+                    drawError: {
+                        color: '#ff6b35',
+                        message: '<strong>Error:</strong> Farm boundary cannot intersect!'
+                    }
+                }, 
+                rectangle: {
+                    shapeOptions: {
+                        color: '#00f5ff',
+                        fillColor: '#00b4d8',
+                        fillOpacity: 0.3,
+                        weight: 3
+                    }
+                },
+                circle: false, 
+                polyline: false, 
+                marker: false 
+            },
+            edit: { 
+                featureGroup: drawnItems,
+                remove: true
+            }
+        });
+        map.addControl(drawControl);
+
+        let currentCoordinates = null;
+
+        // Enhanced polygon creation handler
+        map.on(L.Draw.Event.CREATED, function (e) {
+            drawnItems.clearLayers();
+            const layer = e.layer;
+            drawnItems.addLayer(layer);
+            
+            // Add pulsing effect to drawn area
+            layer.on('add', function() {
+                let opacity = 0.3;
+                let direction = 1;
+                const pulseInterval = setInterval(() => {
+                    opacity += direction * 0.05;
+                    if (opacity >= 0.5) direction = -1;
+                    if (opacity <= 0.1) direction = 1;
+                    layer.setStyle({ fillOpacity: opacity });
+                }, 100);
+                
+                // Stop pulsing after 5 seconds
+                setTimeout(() => {
+                    clearInterval(pulseInterval);
+                    layer.setStyle({ fillOpacity: 0.3 });
+                }, 5000);
+            });
+            
+            const geojson = layer.toGeoJSON();
+            const coordsArray = geojson.geometry.coordinates[0].map(coord => 
+                [parseFloat(coord[0].toFixed(6)), parseFloat(coord[1].toFixed(6))]
+            );
+            
+            currentCoordinates = JSON.stringify(coordsArray, null, 2);
+            
+            // Enhanced coordinate display
+            const displayText = `Farm Boundary Coordinates:\n${currentCoordinates}\n\nArea: ~${calculatePolygonArea(coordsArray).toFixed(2)} hectares\nPerimeter: ~${calculatePolygonPerimeter(coordsArray).toFixed(2)} km`;
+            document.getElementById('coordinatesDisplay').textContent = displayText;
+            
+            // Enhanced success feedback
+            const mapOverlay = document.querySelector('.map-overlay');
+            mapOverlay.innerHTML = '<i class="fas fa-check-circle"></i> Boundary Captured Successfully';
+            mapOverlay.style.background = 'rgba(0, 245, 255, 0.95)';
+            mapOverlay.style.color = '#0a0e1a';
+            mapOverlay.style.transform = 'scale(1.05)';
+            
+            setTimeout(() => {
+                mapOverlay.innerHTML = '<i class="fas fa-draw-polygon"></i> Define Farm Boundary';
+                mapOverlay.style.background = 'rgba(26, 31, 53, 0.9)';
+                mapOverlay.style.color = '#ffffff';
+                mapOverlay.style.transform = 'scale(1)';
+            }, 4000);
+
+            // Trigger success animation on form
+            animateSuccess();
+        });
+
+        // Calculate approximate area in hectares
+        function calculatePolygonArea(coords) {
+            let area = 0;
+            const n = coords.length;
+            for (let i = 0; i < n; i++) {
+                const j = (i + 1) % n;
+                area += coords[i][0] * coords[j][1];
+                area -= coords[j][0] * coords[i][1];
+            }
+            area = Math.abs(area) / 2;
+            // Convert to hectares (very rough approximation)
+            return area * 111320 * 111320 / 10000;
+        }
+
+        // Calculate approximate perimeter in km
+        function calculatePolygonPerimeter(coords) {
+            let perimeter = 0;
+            for (let i = 0; i < coords.length - 1; i++) {
+                const dx = (coords[i+1][0] - coords[i][0]) * 111320;
+                const dy = (coords[i+1][1] - coords[i][1]) * 111320;
+                perimeter += Math.sqrt(dx*dx + dy*dy);
+            }
+            return perimeter / 1000; // Convert to km
+        }
+
+        // Success animation
+        function animateSuccess() {
+            const registrationCard = document.querySelector('.registration-card');
+            registrationCard.style.transform = 'scale(1.02)';
+            registrationCard.style.boxShadow = '0 25px 70px rgba(0, 245, 255, 0.3)';
+            
+            setTimeout(() => {
+                registrationCard.style.transform = 'translateY(-5px)';
+                registrationCard.style.boxShadow = '0 25px 70px rgba(0, 0, 0, 0.5)';
+            }, 500);
+        }
+
+        // Enhanced copy functionality
+        document.getElementById('copyBtn').addEventListener('click', function () {
+            if (currentCoordinates) {
+                navigator.clipboard.writeText(currentCoordinates).then(() => {
+                    // Enhanced button feedback
+                    const btn = this;
+                    const originalText = btn.innerHTML;
+                    const originalBg = btn.style.background;
+                    
+                    btn.innerHTML = '<i class="fas fa-check"></i> Copied to Clipboard!';
+                    btn.style.background = 'linear-gradient(45deg, #00f5ff, #00b4d8)';
+                    btn.style.transform = 'translateY(-3px) scale(1.05)';
+                    btn.style.boxShadow = '0 15px 40px rgba(0, 245, 255, 0.4)';
+                    
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                        btn.style.background = originalBg;
+                        btn.style.transform = '';
+                        btn.style.boxShadow = '';
+                    }, 2500);
+                }).catch(() => {
+                    // Fallback for older browsers
+                    const textArea = document.createElement('textarea');
+                    textArea.value = currentCoordinates;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                    
+                    // Show success message
+                    const btn = this;
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-check"></i> Coordinates Copied!';
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                    }, 2000);
+                });
+            } else {
+                // Enhanced error feedback
+                const btn = this;
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Draw Farm Boundary First';
+                btn.style.background = 'linear-gradient(45deg, #ff6b35, #ff8500)';
+                btn.style.transform = 'shake 0.5s ease-in-out';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
+                    btn.style.transform = '';
+                }, 3000);
+                
+                // Shake animation for map
+                const mapContainer = document.querySelector('.map-container');
+                mapContainer.style.animation = 'shake 0.5s ease-in-out';
+                setTimeout(() => {
+                    mapContainer.style.animation = '';
+                }, 500);
+            }
+        });
+
+        // Enhanced form validation and navigation
+        document.getElementById('goToMonitoringBtn').addEventListener('click', function () {
+            if (!currentCoordinates) {
+                showAlert('🛰️ Farm Boundary Required', 'Please use the satellite map to define your farm boundary before launching the monitoring system.', 'warning');
+                highlightMapArea();
+                return;
+            }
+            
+            // Validate form data with enhanced feedback
+            const farmerName = document.getElementById('farmerName').value.trim();
+            const mobile = document.getElementById('mobile').value.trim();
+            const district = document.getElementById('district').value.trim();
+            const cropName = document.getElementById('cropName').value.trim();
+            
+            const missingFields = [];
+            if (!farmerName) missingFields.push('Farmer Name');
+            if (!mobile) missingFields.push('Mobile Number');
+            if (!district) missingFields.push('District');
+            if (!cropName) missingFields.push('Crop Type');
+            
+            if (missingFields.length > 0) {
+                showAlert('📋 Profile Incomplete', `Please complete these fields: ${missingFields.join(', ')}`, 'info');
+                highlightMissingFields();
+                return;
+            }
+
+            // Validate mobile number
+            if (!/^\+?[\d\s\-\(\)]+$/.test(mobile) || mobile.length < 10) {
+                showAlert('📱 Invalid Mobile Number', 'Please enter a valid mobile number (minimum 10 digits).', 'warning');
+                document.getElementById('mobile').focus();
+                return;
+            }
+            
+            // Enhanced data preparation
+            const formData = {
+                farmerName: farmerName,
+                mobile: mobile,
+                district: district,
+                cropName: cropName,
+                coordinates: currentCoordinates,
+                registrationDate: new Date().toISOString(),
+                farmArea: calculatePolygonArea(JSON.parse(currentCoordinates)),
+                farmPerimeter: calculatePolygonPerimeter(JSON.parse(currentCoordinates)),
+                deviceInfo: {
+                    userAgent: navigator.userAgent,
+                    screenResolution: `${screen.width}x${screen.height}`,
+                    timestamp: Date.now()
+                }
+            };
+            
+            // Store comprehensive data
+            sessionStorage.setItem('farmerData', JSON.stringify(formData));
+            
+            // Enhanced loading sequence
+            const btn = this;
+            const originalText = btn.innerHTML;
+            
+            // Stage 1: Initializing
+            btn.innerHTML = '<div class="loading-spinner"></div> Initializing Satellite Connection...';
+            btn.disabled = true;
+            btn.style.background = 'linear-gradient(45deg, #1a1f35, #2a3454)';
+            
+            setTimeout(() => {
+                // Stage 2: Authenticating
+                btn.innerHTML = '<div class="loading-spinner"></div> Authenticating Credentials...';
+                btn.style.background = 'linear-gradient(45deg, #00b4d8, #0077b6)';
+                
+                setTimeout(() => {
+                    // Stage 3: Launching
+                    btn.innerHTML = '<div class="loading-spinner"></div> Launching Monitoring Dashboard...';
+                    btn.style.background = 'linear-gradient(45deg, #00f5ff, #00b4d8)';
+                    
+                    setTimeout(() => {
+                        // Final stage: Success animation
+                        btn.innerHTML = '<i class="fas fa-rocket"></i> Launching...';
+                        btn.style.transform = 'translateY(-5px) scale(1.1)';
+                        btn.style.boxShadow = '0 20px 50px rgba(0, 245, 255, 0.6)';
+                        
+                        setTimeout(() => {
+                            window.location.href = 'https://suyashbhosale2112.users.earthengine.app/view/crop-health-monitoring';
+                        }, 800);
+                    }, 1500);
+                }, 1500);
+            }, 1500);
+            
+            // Add whole page transition effect
+            setTimeout(() => {
+                document.body.style.transition = 'opacity 1s ease-out';
+                document.body.style.opacity = '0.7';
+            }, 3500);
+        });
+
+        // Enhanced alert system
+        function showAlert(title, message, type = 'info') {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert-overlay ${type}`;
+            alertDiv.innerHTML = `
+                <div class="alert-content">
+                    <div class="alert-header">
+                        <h4>${title}</h4>
+                        <button class="alert-close">&times;</button>
+                    </div>
+                    <p>${message}</p>
+                </div>
+            `;
+            
+            // Add alert styles
+            const alertStyles = `
+                .alert-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    bottom: 0;
+                    background: rgba(10, 14, 26, 0.8);
+                    backdrop-filter: blur(10px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 10000;
+                    animation: fadeIn 0.3s ease-out;
+                }
+                
+                .alert-content {
+                    background: rgba(26, 31, 53, 0.95);
+                    border: 2px solid rgba(0, 245, 255, 0.3);
+                    border-radius: 20px;
+                    padding: 2rem;
+                    max-width: 400px;
+                    width: 90%;
+                    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+                    color: white;
+                    text-align: center;
+                }
+                
+                .alert-header {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 1rem;
+                }
+                
+                .alert-header h4 {
+                    margin: 0;
+                    color: #00f5ff;
+                    font-family: 'Space Grotesk', sans-serif;
+                }
+                
+                .alert-close {
+                    background: none;
+                    border: none;
+                    color: #00f5ff;
+                    font-size: 1.5rem;
+                    cursor: pointer;
+                    padding: 0;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                }
+                
+                .alert-content p {
+                    margin: 0;
+                    line-height: 1.5;
+                }
+                
+                @keyframes fadeIn {
+                    from { opacity: 0; transform: scale(0.9); }
+                    to { opacity: 1; transform: scale(1); }
+                }
+            `;
+            
+            if (!document.getElementById('alert-styles')) {
+                const styleSheet = document.createElement('style');
+                styleSheet.id = 'alert-styles';
+                styleSheet.textContent = alertStyles;
+                document.head.appendChild(styleSheet);
+            }
+            
+            document.body.appendChild(alertDiv);
+            
+            // Close functionality
+            const closeBtn = alertDiv.querySelector('.alert-close');
+            const closeAlert = () => {
+                alertDiv.style.animation = 'fadeOut 0.3s ease-out forwards';
+                setTimeout(() => {
+                    document.body.removeChild(alertDiv);
+                }, 300);
+            };
+            
+            closeBtn.addEventListener('click', closeAlert);
+            alertDiv.addEventListener('click', (e) => {
+                if (e.target === alertDiv) closeAlert();
+            });
+            
+            // Auto-close after 5 seconds
+            setTimeout(closeAlert, 5000);
+        }
+
+        // Highlight map area
+        function highlightMapArea() {
+            const mapContainer = document.querySelector('.map-container');
+            mapContainer.style.boxShadow = '0 0 40px rgba(255, 107, 53, 0.5)';
+            mapContainer.style.borderColor = 'rgba(255, 107, 53, 0.8)';
+            
+            setTimeout(() => {
+                mapContainer.style.boxShadow = '';
+                mapContainer.style.borderColor = '';
+            }, 3000);
+        }
+
+        // Highlight missing fields
+        function highlightMissingFields() {
+            const fields = ['farmerName', 'mobile', 'district', 'cropName'];
+            fields.forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (!field.value.trim()) {
+                    field.style.borderColor = '#ff6b35';
+                    field.style.boxShadow = '0 0 20px rgba(255, 107, 53, 0.3)';
+                    
+                    setTimeout(() => {
+                        field.style.borderColor = '';
+                        field.style.boxShadow = '';
+                    }, 3000);
+                }
+            });
+        }
+
+        // Enhanced form interactions
+        document.querySelectorAll('.form-control').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 0 25px rgba(0, 245, 255, 0.4)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.style.transform = 'translateY(0)';
+                if (!this.value) {
+                    this.style.boxShadow = '';
+                }
+            });
+
+            input.addEventListener('input', function() {
+                if (this.value) {
+                    this.style.borderColor = '#00f5ff';
+                    this.style.background = 'rgba(0, 245, 255, 0.08)';
+                } else {
+                    this.style.borderColor = '';
+                    this.style.background = '';
+                }
+            });
+        });
+
+        // Add CSS for shake animation
+        const shakeStyles = `
+            @keyframes shake {
+                0%, 100% { transform: translateX(0); }
+                25% { transform: translateX(-10px); }
+                75% { transform: translateX(10px); }
+            }
+            
+            @keyframes fadeOut {
+                from { opacity: 1; transform: scale(1); }
+                to { opacity: 0; transform: scale(0.9); }
+            }
+        `;
+        
+        const shakeStyleSheet = document.createElement('style');
+        shakeStyleSheet.textContent = shakeStyles;
+        document.head.appendChild(shakeStyleSheet);
+
+        // Add performance monitoring
+        if ('performance' in window) {
+            window.addEventListener('load', () => {
+                setTimeout(() => {
+                    const perfData = performance.getEntriesByType('navigation')[0];
+                    console.log('Page Load Performance:', {
+                        loadTime: perfData.loadEventEnd - perfData.loadEventStart,
+                        domReady: perfData.domContentLoadedEventEnd - perfData.loadEventStart,
+                        totalTime: perfData.loadEventEnd - perfData.fetchStart
+                    });
+                }, 0);
+            });
+        }
+
+        // Add intersection observer for animations
+        if ('IntersectionObserver' in window) {
+            const observerOptions = {
+                threshold: 0.1,
+                rootMargin: '0px 0px -50px 0px'
+            };
+
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.style.animationPlayState = 'running';
+                    }
+                });
+            }, observerOptions);
+
+            document.querySelectorAll('.gpu-accelerated').forEach(el => {
+                observer.observe(el);
+            });
+        }
+    </script>
+</body>
+<!-- Footer Section -->
+<footer>
+    <div class="container">
+        <p>&copy; designed by Suyash Bhosale. All rights reserved.</p>
+    </div>
+</footer>
+</html>
